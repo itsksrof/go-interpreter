@@ -18,83 +18,6 @@ func New(input string) *Lexer {
 	return l
 }
 
-// skipWhitespace checks if the current character under examination is a whitespace
-// and advances our lexer position until it finds a non-whitespace character. 
-func (l *Lexer) skipWhitespace() {
-	for l.ch == ' ' || l.ch == '\t' || l.ch == '\n' || l.ch == '\r' {
-		l.readChar()
-	}
-}
-
-// newToken takes a token.TokenType and a character (byte)
-// to initialize and return a new token.Token struct.
-func newToken(tokenType token.TokenType, ch byte) token.Token {
-	return token.Token{Type: tokenType, Literal: string(ch)}
-}
-
-// readChar first checks whether or not we have reached the end of the string,
-// if that's the case sets lexer.ch to 0 which is the ASCII code for the "NUL"
-// character, or if we haven't reached the end of the string sets the lexer.ch
-// to the next character by using lexer.readPosition.
-func (l *Lexer) readChar() {
-	if l.readPosition >= len(l.input) {
-		l.ch = 0
-	} else {
-		l.ch = l.input[l.readPosition]
-	}
-
-	l.position = l.readPosition
-	l.readPosition += 1
-}
-
-// readIdentifier reads an identifier and advances our lexer position
-// until it encounters a non-letter-character.
-func (l *Lexer) readIdentifier() string {
-	position := l.position
-	for isLetter(l.ch) {
-		l.readChar()
-	}
-
-	return l.input[position:l.position]
-}
-
-// readNumber reads a number and advances our lexer position until
-// it encounters a non-digit-character.
-func (l *Lexer) readNumber() string {
-	position := l.position
-	for isDigit(l.ch) {
-		l.readChar()
-	}
-
-	return l.input[position:l.position]
-}
-
-// peekChar reads the next character. If it's empty returns a "NUL"
-// ASCII character. If it's not empty returns the character.
-func (l *Lexer) peekChar() byte {
-	if l.readPosition >= len(l.input) {
-		return 0
-	} else {
-		return l.input[l.readPosition]
-	}
-}
-
-// isLetter checks whether the given argument is a letter or not.
-// This function has a huge impact on our interpreter because in here
-// we are determining the characters that we want to consider as letters.
-//
-// For example you can see that we are checking if ch equals '_' meaning
-// that we will treat '_' as a letter, which will allow us to declare variable
-// names like 'foo_bar'.
-func isLetter(ch byte) bool {
-	return 'a' <= ch && ch <= 'z' || 'A' <= ch && ch <= 'Z' || ch == '_'
-}
-
-// isDigit checks whether the given argument is a digit or not.
-func isDigit(ch byte) bool {
-	return '0' <= ch && ch <= '9'
-}
-
 // NextToken looks at the current character under examination and returns
 // a token depending on which character it is. Before returning the token
 // we advance our pointers into the string so when we call NextToken() again
@@ -166,4 +89,81 @@ func (l *Lexer) NextToken() token.Token {
 
 	l.readChar()
 	return tok
+}
+
+// skipWhitespace checks if the current character under examination is a whitespace
+// and advances our lexer position until it finds a non-whitespace character. 
+func (l *Lexer) skipWhitespace() {
+	for l.ch == ' ' || l.ch == '\t' || l.ch == '\n' || l.ch == '\r' {
+		l.readChar()
+	}
+}
+
+// peekChar reads the next character. If it's empty returns a "NUL"
+// ASCII character. If it's not empty returns the character.
+func (l *Lexer) peekChar() byte {
+	if l.readPosition >= len(l.input) {
+		return 0
+	} else {
+		return l.input[l.readPosition]
+	}
+}
+
+// readChar first checks whether or not we have reached the end of the string,
+// if that's the case sets lexer.ch to 0 which is the ASCII code for the "NUL"
+// character, or if we haven't reached the end of the string sets the lexer.ch
+// to the next character by using lexer.readPosition.
+func (l *Lexer) readChar() {
+	if l.readPosition >= len(l.input) {
+		l.ch = 0
+	} else {
+		l.ch = l.input[l.readPosition]
+	}
+
+	l.position = l.readPosition
+	l.readPosition += 1
+}
+
+// newToken takes a token.TokenType and a character (byte)
+// to initialize and return a new token.Token struct.
+func newToken(tokenType token.TokenType, ch byte) token.Token {
+	return token.Token{Type: tokenType, Literal: string(ch)}
+}
+
+// readIdentifier reads an identifier and advances our lexer position
+// until it encounters a non-letter-character.
+func (l *Lexer) readIdentifier() string {
+	position := l.position
+	for isLetter(l.ch) {
+		l.readChar()
+	}
+
+	return l.input[position:l.position]
+}
+
+// isLetter checks whether the given argument is a letter or not.
+// This function has a huge impact on our interpreter because in here
+// we are determining the characters that we want to consider as letters.
+//
+// For example you can see that we are checking if ch equals '_' meaning
+// that we will treat '_' as a letter, which will allow us to declare variable
+// names like 'foo_bar'.
+func isLetter(ch byte) bool {
+	return 'a' <= ch && ch <= 'z' || 'A' <= ch && ch <= 'Z' || ch == '_'
+}
+
+// readNumber reads a number and advances our lexer position until
+// it encounters a non-digit-character.
+func (l *Lexer) readNumber() string {
+	position := l.position
+	for isDigit(l.ch) {
+		l.readChar()
+	}
+
+	return l.input[position:l.position]
+}
+
+// isDigit checks whether the given argument is a digit or not.
+func isDigit(ch byte) bool {
+	return '0' <= ch && ch <= '9'
 }
