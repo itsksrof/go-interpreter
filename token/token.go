@@ -32,3 +32,19 @@ const (
 	FUNCTION	= "FUNCTION"
 	LET			= "LET"
 )
+
+var keywords = map[string]TokenType{
+	"fn": FUNCTION,
+	"let": LET,
+}
+
+// LookupIdent checks the keywords map to see whether the given identifier is a
+// keyword. If it is returns the keyword's TokenType constant. If it isn't returns
+// token.IDENT which is the TokenType for all user-defined identifiers.
+func LookupIdent(ident string) TokenType {
+	if tok, ok := keywords[ident]; ok {
+		return tok
+	}
+
+	return IDENT
+}
