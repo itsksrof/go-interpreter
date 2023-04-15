@@ -63,6 +63,8 @@ func New(l *lexer.Lexer) *Parser {
 	p.prefixParseFns = make(map[token.TokenType]prefixParseFn)
 	p.registerPrefix(token.IDENT, p.parseIdentifier)
 	p.registerPrefix(token.INT, p.parseIntegerLiteral)
+	p.registerPrefix(token.BANG, p.parsePrefixExpression)
+	p.registerPrefix(token.MINUS, p.parsePrefixExpression)
 
 	// Read two tokens, so curToken and peekToken are both set
 	p.nextToken()
@@ -196,12 +198,20 @@ func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
 	return stmt
 }
 
+// noPrefixParseFnError is a small helper method that adds a formatted error message to our
+// parser's error field.
+func (p *Parser) noPrefixParseFnError(t token.TokenType) {
+	msg := fmt.Sprintf("no prefix parse function for %s found", t)
+	p.errors = append(p.errors, msg)
+}
+
 // parseExpression checks whether or not we have a parsing function associated
 // to p.curToken.Type in the prefix position. If we do it calls the parsing fuction.
 // If not it returns nil.
 func (p *Parser) parseExpression(precedence int) ast.Expression {
 	prefix := p.prefixParseFns[p.curToken.Type]
 	if prefix == nil {
+		p.noPrefixParseFnError(p.curToken.Type)
 		return nil
 	}
 
@@ -224,6 +234,21 @@ func (p *Parser) parseIntegerLiteral() ast.Expression {
 
 	lit.Value = value
 	return lit
+}
+
+// parsePrefixExpression constructs an *ast.PrefixExpression node with the current token
+// it's sitting on. Then advances the current token and calls parseExpression with the prefix
+// precedence, parseExpression then checks the registered prefix parsing functions and finds
+// parseIntegerLiteral, which builds an *ast.IntegerLiteral node and returns it. parseExpression
+// returns this newly constructed node and parsePrefixExpression uses it to fill the Right field
+// of *ast.PrefixExpression.
+func (p *Parser) parsePrefixExpression() ast.Expression {
+	expression := &ast.PrefixExpression{Token: p.curToken, Operator: p.curToken.Literal}
+
+	p.nextToken()
+
+	expression.Right = p.parseExpression(PREFIX)
+	return expression
 }
 
 // curTokenIs compares the type of the current token under examination

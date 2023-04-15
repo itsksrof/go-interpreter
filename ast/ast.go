@@ -133,3 +133,25 @@ type IntegerLiteral struct {
 func (il *IntegerLiteral) expressionNode() {}
 func (il *IntegerLiteral) TokenLiteral() string { return il.Token.Literal }
 func (il *IntegerLiteral) String() string { return il.Token.Literal }
+
+// PrefixExpression has two noteworthy fields. The first being Operator which is
+// a string that is going to contain either "-" or "!". And the second being Right
+// which contains the expression to the right of the operator.
+type PrefixExpression struct {
+	Token		token.Token // the prefix token, e.g. !
+	Operator	string
+	Right		Expression
+}
+
+func (pe *PrefixExpression) expressionNode() {}
+func (pe *PrefixExpression) TokenLiteral() string { return pe.Token.Literal }
+func (pe *PrefixExpression) String() string {
+	var out bytes.Buffer
+
+	out.WriteString("(")
+	out.WriteString(pe.Operator)
+	out.WriteString(pe.Right.String())
+	out.WriteString(")")
+
+	return out.String()
+}
