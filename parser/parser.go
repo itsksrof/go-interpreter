@@ -5,6 +5,7 @@ import (
 	"go-interpreter/ast"
 	"go-interpreter/lexer"
 	"go-interpreter/token"
+	"strconv"
 )
 
 // The following constants get assigned the values 1 to 7. Which will
@@ -61,6 +62,7 @@ func New(l *lexer.Lexer) *Parser {
 	// If we encounter a token of type token.IDENT the parsing function to call is parseIdentifier.
 	p.prefixParseFns = make(map[token.TokenType]prefixParseFn)
 	p.registerPrefix(token.IDENT, p.parseIdentifier)
+	p.registerPrefix(token.INT, p.parseIntegerLiteral)
 
 	// Read two tokens, so curToken and peekToken are both set
 	p.nextToken()
@@ -205,6 +207,23 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 
 	leftExp := prefix()
 	return leftExp
+}
+
+// parseIntegerLiteral constructs an *ast.IntegerLiteral node with the current token
+// it's sitting on. It then calls strconv.ParseInt to convert the current token literal
+// to an int64 and returns the previously constructed node.
+func (p *Parser) parseIntegerLiteral() ast.Expression {
+	lit := &ast.IntegerLiteral{Token: p.curToken}
+
+	value, err := strconv.ParseInt(p.curToken.Literal, 0, 64)
+	if err != nil {
+		msg := fmt.Sprintf("could not parse %q as integer", p.curToken.Literal)
+		p.errors = append(p.errors, msg)
+		return nil
+	}
+
+	lit.Value = value
+	return lit
 }
 
 // curTokenIs compares the type of the current token under examination

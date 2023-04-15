@@ -122,3 +122,14 @@ func (es *ExpressionStatement) String() string {
 
 	return ""
 }
+
+// IntegerLiteral fullfills the ast.Expression interface and has as a Value
+// an int64 instead of a string.
+type IntegerLiteral struct {
+	Token token.Token
+	Value int64
+}
+
+func (il *IntegerLiteral) expressionNode() {}
+func (il *IntegerLiteral) TokenLiteral() string { return il.Token.Literal }
+func (il *IntegerLiteral) String() string { return il.Token.Literal }
