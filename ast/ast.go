@@ -155,3 +155,28 @@ func (pe *PrefixExpression) String() string {
 
 	return out.String()
 }
+
+// InfixExpression has three noteworthy fields. The first being Left which contains the
+// expression to the left of the operator. The second being the operator itself which is
+// a string that can contain operators such as "+" or "!=". And the third one being
+// Right which contains the expression to the right of the operator.
+type InfixExpression struct {
+	Token		token.Token // the operator token, e.g. +
+	Left		Expression
+	Operator	string
+	Right		Expression
+}
+
+func (ie *InfixExpression) expressionNode() {}
+func (ie *InfixExpression) TokenLiteral() string { return ie.Token.Literal }
+func (ie *InfixExpression) String() string {
+	var out bytes.Buffer
+
+	out.WriteString("(")
+	out.WriteString(ie.Left.String())
+	out.WriteString(" " + ie.Operator + " ")
+	out.WriteString(ie.Right.String())
+	out.WriteString(")")
+
+	return out.String()
+}
