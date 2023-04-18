@@ -75,6 +75,8 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.INT, p.parseIntegerLiteral)
 	p.registerPrefix(token.BANG, p.parsePrefixExpression)
 	p.registerPrefix(token.MINUS, p.parsePrefixExpression)
+	p.registerPrefix(token.TRUE, p.parseBoolean)
+	p.registerPrefix(token.FALSE, p.parseBoolean)
 
 	p.infixParseFns = make(map[token.TokenType]infixParseFn)
 	p.registerInfix(token.EQ, p.parseInfixExpression)
@@ -208,7 +210,7 @@ func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
 // optional semicolon, if it encounters one it sets it as the curToken, if not we continue as normal.
 func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
 	// Only for debugging purposes
-	defer untrace(trace("parseExpressionStatement"))
+	//defer untrace(trace("parseExpressionStatement"))
 
 	stmt := &ast.ExpressionStatement{Token: p.curToken}
 
@@ -236,7 +238,7 @@ func (p *Parser) noPrefixParseFnError(t token.TokenType) {
 // encounters a token that has a lower precedence.
 func (p *Parser) parseExpression(precedence int) ast.Expression {
 	// Only for debugging purposes
-	defer untrace(trace("parseExpression"))
+	//defer untrace(trace("parseExpression"))
 
 	prefix := p.prefixParseFns[p.curToken.Type]
 	if prefix == nil {
@@ -264,7 +266,7 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 // to an int64 and returns the previously constructed node.
 func (p *Parser) parseIntegerLiteral() ast.Expression {
 	// Only for debugging purposes
-	defer untrace(trace("parseIntegerLiteral"))
+	//defer untrace(trace("parseIntegerLiteral"))
 
 	lit := &ast.IntegerLiteral{Token: p.curToken}
 
@@ -279,6 +281,15 @@ func (p *Parser) parseIntegerLiteral() ast.Expression {
 	return lit
 }
 
+// parseBoolean constructs an *ast.Boolean node with the current token it's sitting on.
+// It then uses the p.curTokenIs method inside the *ast.Boolean Value field to determine
+// whether it is TRUE or FALSE.
+func (p *Parser) parseBoolean() ast.Expression {
+	// Only for debugging purposes
+	//defer untrace(trace("parseBoolean"))
+	return &ast.Boolean{Token: p.curToken, Value: p.curTokenIs(token.TRUE)}
+}
+
 // parsePrefixExpression constructs an *ast.PrefixExpression node with the current token
 // it's sitting on. Then advances the current token and calls parseExpression with the prefix
 // precedence, parseExpression then checks the registered prefix parsing functions and finds
@@ -287,7 +298,7 @@ func (p *Parser) parseIntegerLiteral() ast.Expression {
 // of *ast.PrefixExpression.
 func (p *Parser) parsePrefixExpression() ast.Expression {
 	// Only for debugging purposes
-	defer untrace(trace("parsePrefixExpression"))
+	//defer untrace(trace("parsePrefixExpression"))
 
 	expression := &ast.PrefixExpression{Token: p.curToken, Operator: p.curToken.Literal}
 
@@ -303,7 +314,7 @@ func (p *Parser) parsePrefixExpression() ast.Expression {
 // another call to parseExpression.
 func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
 	// Only for debugging purposes
-	defer untrace(trace("parseInfixExpression"))
+	//defer untrace(trace("parseInfixExpression"))
 
 	expression := &ast.InfixExpression{
 		Token: p.curToken,
