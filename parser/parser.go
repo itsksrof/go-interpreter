@@ -207,6 +207,9 @@ func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
 // it's sitting on. It then calls parseExpression with the constant LOWEST and checks for an
 // optional semicolon, if it encounters one it sets it as the curToken, if not we continue as normal.
 func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
+	// Only for debugging purposes
+	defer untrace(trace("parseExpressionStatement"))
+
 	stmt := &ast.ExpressionStatement{Token: p.curToken}
 
 	stmt.Expression = p.parseExpression(LOWEST)
@@ -232,6 +235,9 @@ func (p *Parser) noPrefixParseFnError(t token.TokenType) {
 // returned by prefixParseFns as an argument. And does this again and again until it
 // encounters a token that has a lower precedence.
 func (p *Parser) parseExpression(precedence int) ast.Expression {
+	// Only for debugging purposes
+	defer untrace(trace("parseExpression"))
+
 	prefix := p.prefixParseFns[p.curToken.Type]
 	if prefix == nil {
 		p.noPrefixParseFnError(p.curToken.Type)
@@ -257,6 +263,9 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 // it's sitting on. It then calls strconv.ParseInt to convert the current token literal
 // to an int64 and returns the previously constructed node.
 func (p *Parser) parseIntegerLiteral() ast.Expression {
+	// Only for debugging purposes
+	defer untrace(trace("parseIntegerLiteral"))
+
 	lit := &ast.IntegerLiteral{Token: p.curToken}
 
 	value, err := strconv.ParseInt(p.curToken.Literal, 0, 64)
@@ -277,6 +286,9 @@ func (p *Parser) parseIntegerLiteral() ast.Expression {
 // returns this newly constructed node and parsePrefixExpression uses it to fill the Right field
 // of *ast.PrefixExpression.
 func (p *Parser) parsePrefixExpression() ast.Expression {
+	// Only for debugging purposes
+	defer untrace(trace("parsePrefixExpression"))
+
 	expression := &ast.PrefixExpression{Token: p.curToken, Operator: p.curToken.Literal}
 
 	p.nextToken()
@@ -290,6 +302,9 @@ func (p *Parser) parsePrefixExpression() ast.Expression {
 // before advancing the tokens by calling nextToken and filling the Right field of the node with
 // another call to parseExpression.
 func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
+	// Only for debugging purposes
+	defer untrace(trace("parseInfixExpression"))
+
 	expression := &ast.InfixExpression{
 		Token: p.curToken,
 		Operator: p.curToken.Literal,
