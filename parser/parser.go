@@ -31,6 +31,7 @@ var precedences = map[token.TokenType]int{
 	token.MINUS:	SUM,
 	token.SLASH:	PRODUCT,
 	token.ASTERISK: PRODUCT,
+	token.LPAREN:	CALL,
 }
 
 // Both functions return an ast.Expression but only infixParseFn takes an argument,
@@ -90,7 +91,8 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerInfix(token.MINUS, p.parseInfixExpression)
 	p.registerInfix(token.SLASH, p.parseInfixExpression)
 	p.registerInfix(token.ASTERISK, p.parseInfixExpression)
- 
+	p.registerInfix(token.LPAREN, p.parseCallExpression)
+
 	// Read two tokens, so curToken and peekToken are both set
 	p.nextToken()
 	p.nextToken()
@@ -419,6 +421,46 @@ func (p *Parser) parseBlockStatement() *ast.BlockStatement {
 	}
 
 	return block
+}
+
+// parseCallExpression receives the already parsed function as argument and uses
+// it to construct a *ast.CallExpression node. It calls p.parseCallArguments to
+// parse the argument list.
+func (p *Parser) parseCallExpression(function ast.Expression) ast.Expression {
+	exp := &ast.CallExpression{Token: p.curToken, Function: function}
+	exp.Arguments = p.parseCallArguments()
+	return exp
+}
+
+// parseCallArguments constructs a slice of ast.Expression. It starts by checking if the next
+// token under examination is a token.RPAREN. If it is returns an empty ast.Expression slice.
+// Otherwise it advances the tokens and uses p.parseExpression to append a new argument to the
+// ast.Expression slice. Then checks whether the next token is a token.COMMA. If it is starts a
+// loop, advances the tokens, and uses p.parseExpression to append a new argument to the ast.Expression
+// slice. If the condition of the loop evaluates to false, it checks that the next token is a token.RPAREN,
+// and returns either nil or the ast.Expression slice.
+func (p *Parser) parseCallArguments() []ast.Expression {
+	args := []ast.Expression{}
+
+	if p.peekTokenIs(token.RPAREN) {
+		p.nextToken()
+		return args
+	}
+
+	p.nextToken()
+	args = append(args, p.parseExpression(LOWEST))
+
+	for p.peekTokenIs(token.COMMA) {
+		p.nextToken()
+		p.nextToken()
+		args = append(args, p.parseExpression(LOWEST))
+	}
+
+	if !p.expectPeek(token.RPAREN) {
+		return nil
+	}
+
+	return args
 }
 
 // parsePrefixExpression constructs an *ast.PrefixExpression node with the current token
