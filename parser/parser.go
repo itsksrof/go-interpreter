@@ -79,6 +79,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.FALSE, p.parseBoolean)
 	p.registerPrefix(token.LPAREN, p.parseGroupedExpression)
 	p.registerPrefix(token.IF, p.parseIfExpression)
+	p.registerPrefix(token.FUNCTION, p.parseFunctionLiteral)
 
 	p.infixParseFns = make(map[token.TokenType]infixParseFn)
 	p.registerInfix(token.EQ, p.parseInfixExpression)
@@ -344,6 +345,60 @@ func (p *Parser) parseIfExpression() ast.Expression {
 	}
 
 	return expression
+}
+
+// parseFunctionLiteral constructs *ast.FunctionLiteral node with the current token it's sitting on.
+// It uses the method p.parseFunctionParameters to construct a slice of ast.Identifier, and the
+// p.parseBlockStatement method to construct an ast.BlockStatement.
+func (p *Parser) parseFunctionLiteral() ast.Expression {
+	lit := &ast.FunctionLiteral{Token: p.curToken}
+
+	if !p.expectPeek(token.LPAREN) {
+		return nil
+	}
+
+	lit.Parameters = p.parseFunctionParameters()
+
+	if !p.expectPeek(token.LBRACE) {
+		return nil
+	}
+
+	lit.Body = p.parseBlockStatement()
+	return lit
+}
+
+// parseFunctionParameters constructs a slice of ast.Identifier. It starts by checking if the
+// next token under examination is a token.RPAREN. If it is returns an empty ast.Identifier slice.
+// Otherwise it advances the tokens and builds a new ast.Identifier with the current token under examinationm
+// and appends it to the ast.Identifier slice. Then checks whether the next token is a token.COMMA. If it is
+// starts a loop, advances the tokens, and builds and appends a new ast.Identifier to the ast.Identifier slice.
+// If the condition of the loop evaluates to false, it checks that the next token is a token.RPAREN, and returns
+// either nil or the ast.Identifier slice.
+func (p *Parser) parseFunctionParameters() []*ast.Identifier {
+	identifiers := []*ast.Identifier{}
+
+	if p.peekTokenIs(token.RPAREN) {
+		p.nextToken()
+		return identifiers
+	}
+
+	p.nextToken()
+
+	ident := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+	identifiers = append(identifiers, ident)
+
+	for p.peekTokenIs(token.COMMA) {
+		p.nextToken()
+		p.nextToken()
+		ident := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+		identifiers = append(identifiers, ident)
+	}
+
+	if !p.expectPeek(token.RPAREN) {
+		return nil
+	}
+
+	return identifiers
 }
 
 // parseBlockStatement constructs an *ast.BlockStatement node with the current token it's sitting on.
