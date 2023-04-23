@@ -5,6 +5,12 @@ import (
 	"go-interpreter/object"
 )
 
+var (
+	NULL	= &object.Null{}
+	TRUE	= &object.Boolean{Value: true}
+	FALSE	= &object.Boolean{Value: false}
+)
+
 // Eval uses the ast.Node to travers the AST. It starts at the top, receiving an *ast.Program.
 // Then it traverses every node that it's in it.
 func Eval(node ast.Node) object.Object {
@@ -15,6 +21,8 @@ func Eval(node ast.Node) object.Object {
 		return Eval(node.Expression)
 	case *ast.IntegerLiteral:
 		return &object.Integer{Value: node.Value}
+	case *ast.Boolean:
+		return nativeBoolToBooleanObject(node.Value)
 	}
 
 	return nil
@@ -29,4 +37,14 @@ func evalStatements(stmts []ast.Statement) object.Object {
 	}
 
 	return result
+}
+
+// nativeBoolToBooleanObject returns an *object.Boolean with its value set to TRUE or FALSE
+// depending on the given input.
+func nativeBoolToBooleanObject(input bool) *object.Boolean {
+	if input {
+		return TRUE
+	}
+
+	return FALSE
 }
