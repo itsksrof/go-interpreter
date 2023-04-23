@@ -30,6 +30,10 @@ func Eval(node ast.Node) object.Object {
 		left := Eval(node.Left)
 		right := Eval(node.Right)
 		return evalInfixExpression(node.Operator, left, right)
+	case *ast.BlockStatement:
+		return evalStatements(node.Statements)
+	case *ast.IfExpression:
+		return evalIfExpression(node)
 	}
 
 	return nil
@@ -99,6 +103,10 @@ func evalInfixExpression(operator string, left, right object.Object) object.Obje
 	}
 }
 
+// evalIntegerInfixExpression checks whether or not the left and right operands are integers.
+// It then uses the given operator to perform the following arithmetic operations: 'addition',
+// 'subtraction', 'multiplication' and 'division'. Or the following relational operations: 'less-than',
+// 'greater-than', 'equal', 'not-equal'.
 func evalIntegerInfixExpression(operator string, left, right object.Object) object.Object {
 	leftVal := left.(*object.Integer).Value
 	rightVal := right.(*object.Integer).Value
@@ -122,6 +130,36 @@ func evalIntegerInfixExpression(operator string, left, right object.Object) obje
 		return nativeBoolToBooleanObject(leftVal != rightVal)
 	default:
 		return NULL
+	}
+}
+
+// evalIfExpression first evaluates the condition contained inside the if-expression.
+// It then uses isTruthy to determine the result of the given condition, or checks
+// to see if there is an else branch. If neither of those are met it returns NULL.
+func evalIfExpression(ie *ast.IfExpression) object.Object {
+	condition := Eval(ie.Condition)
+
+	if isTruthy(condition) {
+		return Eval(ie.Consequence)
+	} else if (ie.Alternative) != nil {
+		return Eval(ie.Alternative)
+	} else {
+		return NULL
+	}
+} 
+
+// isTruthy uses the given object to determine the result of the condition contained
+// in the if-else-expression.
+func isTruthy(obj object.Object) bool {
+	switch obj {
+	case NULL:
+		return false
+	case TRUE:
+		return true
+	case FALSE:
+		return false
+	default:
+		return true
 	}
 }
 
