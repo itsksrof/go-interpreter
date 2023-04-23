@@ -63,11 +63,28 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 		env.Set(node.Name.Value, val)
 	case *ast.Identifier:
 		return evalIdentifier(node, env)
+	case *ast.FunctionLiteral:
+		params := node.Parameters
+		body := node.Body
+		return &object.Function{Parameters: params, Env: env, Body: body}
+	case *ast.CallExpression:
+		function := Eval(node.Function, env)
+		if isError(function) {
+			return function
+		}
+
+		args := evalExpressions(node.Arguments, env)
+		if len(args) == 1 && isError(args[0]) {
+			return args[0]
+		}
+
+		return applyFunction(function, args)
 	}
 
 	return nil
 }
 
+// evalIdentifier uses the given node to check if a value exists in the env. 
 func evalIdentifier(node *ast.Identifier, env *object.Environment) object.Object {
 	val, ok := env.Get(node.Value)
 	if !ok {
@@ -75,6 +92,62 @@ func evalIdentifier(node *ast.Identifier, env *object.Environment) object.Object
 	}
 
 	return val
+}
+
+// evalExpressions iterates over a slice of ast.Expression and evaluates them in the
+// context of the current environment. If it encounters an error, stops the evaluation
+// and returns the error.
+func evalExpressions(exps []ast.Expression, env *object.Environment) []object.Object {
+	var result []object.Object
+
+	for _, e := range exps {
+		evaluated := Eval(e, env)
+		if isError(evaluated) {
+			return []object.Object{evaluated}
+		}
+
+		result = append(result, evaluated)
+	}
+
+	return result
+}
+
+// applyFunction checks that the given object is an *object.Function,
+// calls extendFunctionEnv to create a new *object.Environment, call Eval
+// with the body of the function and the extended environment, and finally
+// unwraps the result of the evaluation.
+func applyFunction(fn object.Object, args []object.Object) object.Object {
+	function, ok := fn.(*object.Function)
+	if !ok {
+		return newError("not a function: %s", fn.Type())
+	}
+
+	extendedEnv := extendFunctionEnv(function, args)
+	evaluated := Eval(function.Body, extendedEnv)
+	return unwrapReturnValue(evaluated)
+}
+
+// extendFunctionEnv creates a new enclosed environment from an already existing one.
+// Then it iterates over the parameters of the function, and adds a new entry to the map
+// for each one of them.
+func extendFunctionEnv(fn *object.Function, args []object.Object) *object.Environment {
+	env := object.NewEnclosedEnvironment(fn.Env)
+
+	for idx, param := range fn.Parameters {
+		env.Set(param.Value, args[idx])
+	}
+
+	return env
+}
+
+// unwrapReturnValue checks whether the current object is an *object.ReturnValue or not.
+// If it is returns its value, otherwise returns the given object.
+func unwrapReturnValue(obj object.Object) object.Object {
+	if returnValue, ok := obj.(*object.ReturnValue); ok {
+		return returnValue.Value
+	}
+
+	return obj
 }
 
 // isError returns whether or not the given obj is an object.ERROR_OBJ.
