@@ -23,6 +23,9 @@ func Eval(node ast.Node) object.Object {
 		return &object.Integer{Value: node.Value}
 	case *ast.Boolean:
 		return nativeBoolToBooleanObject(node.Value)
+	case *ast.PrefixExpression:
+		right := Eval(node.Right)
+		return evalPrefixExpression(node.Operator, right)
 	}
 
 	return nil
@@ -37,6 +40,44 @@ func evalStatements(stmts []ast.Statement) object.Object {
 	}
 
 	return result
+}
+
+// evalPrefixExpression uses the given operator to determine which eval function to use.
+func evalPrefixExpression(operator string, right object.Object) object.Object {
+	switch operator {
+	case "!":
+		return evalBangOperatorExpression(right)
+	case "-":
+		return evalMinusOperatorExpression(right)
+	default:
+		return NULL
+	}
+}
+
+// evalBangOperatorExpression uses the given object to negate it.  
+func evalBangOperatorExpression(right object.Object) object.Object {
+	switch right {
+	case TRUE:
+		return FALSE
+	case FALSE:
+		return TRUE
+	case NULL:
+		return TRUE
+	default:
+		return FALSE
+	}
+}
+
+// evalMinusOperatorExpression checks if the operand is an integer. If it isn't,
+// returns NULL. But if it is, we extract the value of the *object.Integer. Then
+// allocates a new object to wrap the negated version of the value.
+func evalMinusOperatorExpression(right object.Object) object.Object {
+	if right.Type() != object.INTEGER_OBJ {
+		return NULL
+	}
+
+	value := right.(*object.Integer).Value
+	return &object.Integer{Value: -value}
 }
 
 // nativeBoolToBooleanObject returns an *object.Boolean with its value set to TRUE or FALSE
