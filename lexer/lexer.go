@@ -70,6 +70,9 @@ func (l *Lexer) NextToken() token.Token {
 		tok = newToken(token.LBRACE, l.ch)
 	case '}':
 		tok = newToken(token.RBRACE, l.ch)
+	case '"':
+		tok.Type = token.STRING
+		tok.Literal = l.readString()
 	case 0:
 		tok.Literal = ""
 		tok.Type = token.EOF
@@ -166,4 +169,18 @@ func (l *Lexer) readNumber() string {
 // isDigit checks whether the given argument is a digit or not.
 func isDigit(ch byte) bool {
 	return '0' <= ch && ch <= '9'
+}
+
+// readString reads a string and advances our lexer position until
+// it encounters a closing double quote '"' or EOI.
+func (l *Lexer) readString() string {
+	position := l.position + 1
+	for {
+		l.readChar()
+		if l.ch == '"' || l.ch == 0 {
+			break
+		}
+	}
+
+	return l.input[position:l.position]
 }

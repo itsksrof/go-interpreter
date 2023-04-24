@@ -81,6 +81,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.LPAREN, p.parseGroupedExpression)
 	p.registerPrefix(token.IF, p.parseIfExpression)
 	p.registerPrefix(token.FUNCTION, p.parseFunctionLiteral)
+	p.registerPrefix(token.STRING, p.parseStringLiteral)
 
 	p.infixParseFns = make(map[token.TokenType]infixParseFn)
 	p.registerInfix(token.EQ, p.parseInfixExpression)
@@ -284,6 +285,14 @@ func (p *Parser) parseIntegerLiteral() ast.Expression {
 
 	lit.Value = value
 	return lit
+}
+
+// parseStringLiteral constructs a *ast.StringLiteral node with the current token it's
+// sitting on, and sets the Value to the current token literal.
+func (p *Parser) parseStringLiteral() ast.Expression {
+	// Only for debugging purposes
+	//defer untrace(trace("parseStringLiteral"))
+	return &ast.StringLiteral{Token: p.curToken, Value: p.curToken.Literal}
 }
 
 // parseBoolean constructs an *ast.Boolean node with the current token it's sitting on.
