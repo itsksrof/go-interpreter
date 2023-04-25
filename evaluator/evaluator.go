@@ -86,14 +86,19 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 	return nil
 }
 
-// evalIdentifier uses the given node to check if a value exists in the env. 
+// evalIdentifier uses the given node to check if a value exists in the env,
+// and if it does not exist try's to lookup in the builtin functions map to
+// use them as a fallback.
 func evalIdentifier(node *ast.Identifier, env *object.Environment) object.Object {
-	val, ok := env.Get(node.Value)
-	if !ok {
-		return newError("identifier not found: " + node.Value)
+	if val, ok := env.Get(node.Value); ok {
+		return val
 	}
 
-	return val
+	if builtin, ok := builtins[node.Value]; ok {
+		return builtin
+	}
+
+	return newError("identifier not found: " + node.Value)
 }
 
 // evalExpressions iterates over a slice of ast.Expression and evaluates them in the
@@ -114,19 +119,22 @@ func evalExpressions(exps []ast.Expression, env *object.Environment) []object.Ob
 	return result
 }
 
-// applyFunction checks that the given object is an *object.Function,
-// calls extendFunctionEnv to create a new *object.Environment, call Eval
-// with the body of the function and the extended environment, and finally
-// unwraps the result of the evaluation.
+// applyFunction asserts the type of the given object. If it is an *object.Function,
+// calls extendedFunctionEnv to create a new *object.Environment, calls Eval with
+// the body of the function and the extended environment, and finally unwraps the
+// result of the evaluation. If it is an *object.Builtin we use the Fn field that
+// has inside of it alongside the given arguments.
 func applyFunction(fn object.Object, args []object.Object) object.Object {
-	function, ok := fn.(*object.Function)
-	if !ok {
+	switch fn := fn.(type) {
+	case *object.Function:
+		extendedEnv := extendFunctionEnv(fn, args)
+		evaluated := Eval(fn.Body, extendedEnv)
+		return unwrapReturnValue(evaluated)
+	case *object.Builtin:
+		return fn.Fn(args...)
+	default:
 		return newError("not a function: %s", fn.Type())
 	}
-
-	extendedEnv := extendFunctionEnv(function, args)
-	evaluated := Eval(function.Body, extendedEnv)
-	return unwrapReturnValue(evaluated)
 }
 
 // extendFunctionEnv creates a new enclosed environment from an already existing one.
