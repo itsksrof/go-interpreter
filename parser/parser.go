@@ -82,6 +82,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.IF, p.parseIfExpression)
 	p.registerPrefix(token.FUNCTION, p.parseFunctionLiteral)
 	p.registerPrefix(token.STRING, p.parseStringLiteral)
+	p.registerPrefix(token.LBRACKET, p.parseArrayLiteral)
 
 	p.infixParseFns = make(map[token.TokenType]infixParseFn)
 	p.registerInfix(token.EQ, p.parseInfixExpression)
@@ -295,6 +296,47 @@ func (p *Parser) parseStringLiteral() ast.Expression {
 	return &ast.StringLiteral{Token: p.curToken, Value: p.curToken.Literal}
 }
 
+// parseArrayLiteral constructs a *ast.ArrayLiteral node with the current token it's
+// sitting on, and calls p.parseExpressionList to parse a list of comma separated arguments.
+func (p *Parser) parseArrayLiteral() ast.Expression {
+	// Only for debugging purposes
+	//defer untrace(trace("parseArrayLiteral"))
+	array := &ast.ArrayLiteral{Token: p.curToken}
+	array.Elements = p.parseExpressionList(token.RBRACKET)
+	return array
+}
+
+// parseExpressionList constructs a slice of ast.Expression. It starts by checking if the next
+// token under examination is the given end token.TokenType. If it is returns an empty ast.Expression
+// slice. Otherwise it advances the tokens and uses the p.parseExpression to append a new argument to
+// the ast.Expression slice. Then checks whether the next token is a token.COMMA. If it is starts a
+// loop, advances the tokens, and uses p.parseExpression to append a new argument to the ast.Expression
+// slice. If the condition of the loop evaluates to false, it checks that the next token is the given
+// end token.TokenType and returns either nil or the ast.Expression slice.
+func (p *Parser) parseExpressionList(end token.TokenType) []ast.Expression {
+	list := []ast.Expression{}
+
+	if p.peekTokenIs(end) {
+		p.nextToken()
+		return list
+	}
+
+	p.nextToken()
+	list = append(list, p.parseExpression(LOWEST))
+
+	for p.peekTokenIs(token.COMMA) {
+		p.nextToken()
+		p.nextToken()
+		list = append(list, p.parseExpression(LOWEST))
+	}
+
+	if !p.expectPeek(end) {
+		return nil
+	}
+
+	return list
+}
+
 // parseBoolean constructs an *ast.Boolean node with the current token it's sitting on.
 // It then uses the p.curTokenIs method inside the *ast.Boolean Value field to determine
 // whether it is TRUE or FALSE.
@@ -437,39 +479,8 @@ func (p *Parser) parseBlockStatement() *ast.BlockStatement {
 // parse the argument list.
 func (p *Parser) parseCallExpression(function ast.Expression) ast.Expression {
 	exp := &ast.CallExpression{Token: p.curToken, Function: function}
-	exp.Arguments = p.parseCallArguments()
+	exp.Arguments = p.parseExpressionList(token.RPAREN)
 	return exp
-}
-
-// parseCallArguments constructs a slice of ast.Expression. It starts by checking if the next
-// token under examination is a token.RPAREN. If it is returns an empty ast.Expression slice.
-// Otherwise it advances the tokens and uses p.parseExpression to append a new argument to the
-// ast.Expression slice. Then checks whether the next token is a token.COMMA. If it is starts a
-// loop, advances the tokens, and uses p.parseExpression to append a new argument to the ast.Expression
-// slice. If the condition of the loop evaluates to false, it checks that the next token is a token.RPAREN,
-// and returns either nil or the ast.Expression slice.
-func (p *Parser) parseCallArguments() []ast.Expression {
-	args := []ast.Expression{}
-
-	if p.peekTokenIs(token.RPAREN) {
-		p.nextToken()
-		return args
-	}
-
-	p.nextToken()
-	args = append(args, p.parseExpression(LOWEST))
-
-	for p.peekTokenIs(token.COMMA) {
-		p.nextToken()
-		p.nextToken()
-		args = append(args, p.parseExpression(LOWEST))
-	}
-
-	if !p.expectPeek(token.RPAREN) {
-		return nil
-	}
-
-	return args
 }
 
 // parsePrefixExpression constructs an *ast.PrefixExpression node with the current token
