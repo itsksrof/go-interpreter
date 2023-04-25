@@ -294,6 +294,8 @@ func (ce *CallExpression) String() string {
 	return out.String()
 }
 
+// StringLiteral fullfills the ast.Expression interface and has as a Value
+// a string.
 type StringLiteral struct {
 	Token token.Token
 	Value string
