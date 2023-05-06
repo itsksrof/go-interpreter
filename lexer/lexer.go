@@ -3,10 +3,10 @@ package lexer
 import "go-interpreter/token"
 
 type Lexer struct {
-	input			string
-	position		int		// current position in input (points to current char)
-	readPosition	int		// current reading position in input (after current char)
-	ch				byte	// current char under examination
+	input        string
+	position     int  // current position in input (points to current char)
+	readPosition int  // current reading position in input (after current char)
+	ch           byte // current char under examination
 }
 
 // New initializes a *Lexer with a given string and calls lexer.readChar
@@ -58,6 +58,8 @@ func (l *Lexer) NextToken() token.Token {
 		tok = newToken(token.LT, l.ch)
 	case '>':
 		tok = newToken(token.GT, l.ch)
+	case ':':
+		tok = newToken(token.COLON, l.ch)
 	case ';':
 		tok = newToken(token.SEMICOLON, l.ch)
 	case ',':
@@ -99,7 +101,7 @@ func (l *Lexer) NextToken() token.Token {
 }
 
 // skipWhitespace checks if the current character under examination is a whitespace
-// and advances our lexer position until it finds a non-whitespace character. 
+// and advances our lexer position until it finds a non-whitespace character.
 func (l *Lexer) skipWhitespace() {
 	for l.ch == ' ' || l.ch == '\t' || l.ch == '\n' || l.ch == '\r' {
 		l.readChar()

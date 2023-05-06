@@ -3,61 +3,62 @@ package token
 type TokenType string
 
 type Token struct {
-	Type TokenType
+	Type    TokenType
 	Literal string
 }
 
 const (
-	ILLEGAL	= "ILLEGAL"
-	EOF		= "EOF"
+	ILLEGAL = "ILLEGAL"
+	EOF     = "EOF"
 
 	// Identifiers + literals
-	IDENT	= "IDENT" // add, foobar, x, y, ...
-	INT		= "INT" // 123456
-	STRING	= "STRING" // "hello, monkey"
+	IDENT  = "IDENT"  // add, foobar, x, y, ...
+	INT    = "INT"    // 123456
+	STRING = "STRING" // "hello, monkey"
 
 	// Operators
-	ASSIGN		= "="
-	PLUS		= "+"
-	MINUS		= "-"
-	BANG		= "!"
-	ASTERISK	= "*"
-	SLASH		= "/"
+	ASSIGN   = "="
+	PLUS     = "+"
+	MINUS    = "-"
+	BANG     = "!"
+	ASTERISK = "*"
+	SLASH    = "/"
 
 	LT = "<"
 	GT = ">"
 
-	EQ		=	"=="
-	NOT_EQ	=	"!="
+	EQ     = "=="
+	NOT_EQ = "!="
 
 	// Delimiters
-	COMMA		= ","
-	SEMICOLON	= ";"
+	COMMA     = ","
+	SEMICOLON = ";"
+	COLON     = ":"
 
-	LPAREN		= "("
-	RPAREN		= ")"
-	LBRACE		= "{"
-	RBRACE		= "}"
-	LBRACKET	= "["
-	RBRACKET	= "]"
+	LPAREN   = "("
+	RPAREN   = ")"
+	LBRACE   = "{"
+	RBRACE   = "}"
+	LBRACKET = "["
+	RBRACKET = "]"
 
 	// Keywords
-	FUNCTION	= "FUNCTION"
-	LET			= "LET"
-	TRUE		= "TRUE"
-	FALSE		= "FALSE"
-	IF			= "IF"
-	ELSE		= "ELSE"
-	RETURN		= "RETURN"
+	FUNCTION = "FUNCTION"
+	LET      = "LET"
+	TRUE     = "TRUE"
+	FALSE    = "FALSE"
+	IF       = "IF"
+	ELSE     = "ELSE"
+	RETURN   = "RETURN"
 )
 
 var keywords = map[string]TokenType{
-	"fn": FUNCTION,
-	"let": LET,
-	"true": TRUE,
-	"false": FALSE,
-	"if": IF,
-	"else": ELSE,
+	"fn":     FUNCTION,
+	"let":    LET,
+	"true":   TRUE,
+	"false":  FALSE,
+	"if":     IF,
+	"else":   ELSE,
 	"return": RETURN,
 }
 
