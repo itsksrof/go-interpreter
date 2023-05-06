@@ -100,6 +100,8 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 		}
 
 		return evalIndexExpression(left, index)
+	case *ast.HashLiteral:
+		return evalHashLiteral(node, env)
 	}
 
 	return nil
@@ -142,6 +144,39 @@ func evalArrayIndexExpression(array, index object.Object) object.Object {
 	}
 
 	return arrayObject.Elements[idx]
+}
+
+// evalHashLiteral iterates over the node.Pairs. The key node is the first to be evaluated.
+// If the call to Eval does not produce any errors, it also makes type assertions to ensure
+// that it implements the object.Hashable interface, and thus can be used as a hash key.
+// Then it calls Eval again to evaluate the value node. If the call to eval also does not
+// produce any errors its safe to add the newly produced key-value pair to the pairs map.
+// It generates a new hash key for the hash key object with a call to HashKey, and then
+// initializes a new HashPair pointing to both key and value and adding it to the pairs.
+func evalHashLiteral(node *ast.HashLiteral, env *object.Environment) object.Object {
+	pairs := make(map[object.HashKey]object.HashPair)
+
+	for keyNode, valueNode := range node.Pairs {
+		key := Eval(keyNode, env)
+		if isError(key) {
+			return key
+		}
+
+		hashKey, ok := key.(object.Hashable)
+		if !ok {
+			return newError("unusable as hash key: %s", key.Type())
+		}
+
+		value := Eval(valueNode, env)
+		if isError(value) {
+			return value
+		}
+
+		hashed := hashKey.HashKey()
+		pairs[hashed] = object.HashPair{Key: key, Value: value}
+	}
+
+	return &object.Hash{Pairs: pairs}
 }
 
 // evalExpressions iterates over a slice of ast.Expression and evaluates them in the
