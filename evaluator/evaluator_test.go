@@ -8,8 +8,8 @@ import (
 )
 
 func TestEvalIntegerExpression(t *testing.T) {
-	tests := []struct{
-		input	 string
+	tests := []struct {
+		input    string
 		expected int64
 	}{
 		{"5", 5},
@@ -64,9 +64,9 @@ func TestStringConcatenation(t *testing.T) {
 }
 
 func TestEvalBooleanExpression(t *testing.T) {
-	tests := []struct{
-		input		string
-		expected	bool
+	tests := []struct {
+		input    string
+		expected bool
 	}{
 		{"true", true},
 		{"false", false},
@@ -96,9 +96,9 @@ func TestEvalBooleanExpression(t *testing.T) {
 }
 
 func TestBangOperator(t *testing.T) {
-	tests := []struct{
-		input		string
-		expected	bool
+	tests := []struct {
+		input    string
+		expected bool
 	}{
 		{"!true", false},
 		{"!false", true},
@@ -115,9 +115,9 @@ func TestBangOperator(t *testing.T) {
 }
 
 func TestIfElseExpressions(t *testing.T) {
-	tests := []struct{
-		input		string
-		expected	interface{}
+	tests := []struct {
+		input    string
+		expected interface{}
 	}{
 		{"if (true) { 10 }", 10},
 		{"if (false) { 10 }", nil},
@@ -140,9 +140,9 @@ func TestIfElseExpressions(t *testing.T) {
 }
 
 func TestReturnStatements(t *testing.T) {
-	tests := []struct{
-		input		string
-		expected	int64
+	tests := []struct {
+		input    string
+		expected int64
 	}{
 		{"return 10;", 10},
 		{"return 10; 9;", 10},
@@ -161,8 +161,8 @@ func TestReturnStatements(t *testing.T) {
 }
 
 func TestErrorHandling(t *testing.T) {
-	tests := []struct{
-		input			string
+	tests := []struct {
+		input           string
 		expectedMessage string
 	}{
 		{
@@ -219,9 +219,9 @@ func TestErrorHandling(t *testing.T) {
 }
 
 func TestLetStatements(t *testing.T) {
-	tests := []struct{
-		input		string
-		expected	int64
+	tests := []struct {
+		input    string
+		expected int64
 	}{
 		{"let a = 5; a;", 5},
 		{"let a = 5 * 5; a;", 25},
@@ -235,7 +235,7 @@ func TestLetStatements(t *testing.T) {
 }
 
 func TestFunctionObject(t *testing.T) {
-	input :=  "fn(x) { x + 2; };"
+	input := "fn(x) { x + 2; };"
 
 	evaluated := testEval(input)
 	fn, ok := evaluated.(*object.Function)
@@ -259,9 +259,9 @@ func TestFunctionObject(t *testing.T) {
 }
 
 func TestFunctionApplication(t *testing.T) {
-	tests := []struct{
-		input		string
-		expected	int64
+	tests := []struct {
+		input    string
+		expected int64
 	}{
 		{"let identity = fn(x) { x; }; identity(5);", 5},
 		{"let identity = fn(x) { return x; }; identity(5);", 5},
@@ -290,9 +290,9 @@ func TestClosures(t *testing.T) {
 }
 
 func TestBuiltinFunctions(t *testing.T) {
-	tests := []struct{
-		input		string
-		expected	interface{}
+	tests := []struct {
+		input    string
+		expected interface{}
 	}{
 		{`len("")`, 0},
 		{`len("four")`, 4},
@@ -320,12 +320,30 @@ func TestBuiltinFunctions(t *testing.T) {
 	}
 }
 
+func TestArrayLiterals(t *testing.T) {
+	input := "[1,2*2,3+3]"
+
+	evaluated := testEval(input)
+	result, ok := evaluated.(*object.Array)
+	if !ok {
+		t.Fatalf("object is not Array. got=%T (%+v)", evaluated, evaluated)
+	}
+
+	if len(result.Elements) != 3 {
+		t.Fatalf("array has wrong num of elements. got=%d", len(result.Elements))
+	}
+
+	testIntegerObject(t, result.Elements[0], 1)
+	testIntegerObject(t, result.Elements[1], 4)
+	testIntegerObject(t, result.Elements[2], 6)
+}
+
 func testEval(input string) object.Object {
 	l := lexer.New(input)
 	p := parser.New(l)
 	program := p.ParseProgram()
 	env := object.NewEnvironment()
-	
+
 	return Eval(program, env)
 }
 

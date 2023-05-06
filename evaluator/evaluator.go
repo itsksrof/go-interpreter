@@ -7,9 +7,9 @@ import (
 )
 
 var (
-	NULL	= &object.Null{}
-	TRUE	= &object.Boolean{Value: true}
-	FALSE	= &object.Boolean{Value: false}
+	NULL  = &object.Null{}
+	TRUE  = &object.Boolean{Value: true}
+	FALSE = &object.Boolean{Value: false}
 )
 
 // Eval uses the ast.Node to travers the AST. It starts at the top, receiving an *ast.Program.
@@ -81,6 +81,13 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 		}
 
 		return applyFunction(function, args)
+	case *ast.ArrayLiteral:
+		elements := evalExpressions(node.Elements, env)
+		if len(elements) == 1 && isError(elements[0]) {
+			return elements[0]
+		}
+
+		return &object.Array{Elements: elements}
 	}
 
 	return nil
@@ -221,7 +228,7 @@ func evalPrefixExpression(operator string, right object.Object) object.Object {
 	}
 }
 
-// evalBangOperatorExpression uses the given object to negate it.  
+// evalBangOperatorExpression uses the given object to negate it.
 func evalBangOperatorExpression(right object.Object) object.Object {
 	switch right {
 	case TRUE:
@@ -287,7 +294,7 @@ func evalIntegerInfixExpression(operator string, left, right object.Object) obje
 	case "/":
 		return &object.Integer{Value: leftVal / rightVal}
 	case "<":
-		return nativeBoolToBooleanObject(leftVal < rightVal) 
+		return nativeBoolToBooleanObject(leftVal < rightVal)
 	case ">":
 		return nativeBoolToBooleanObject(leftVal > rightVal)
 	case "==":
@@ -327,7 +334,7 @@ func evalIfExpression(ie *ast.IfExpression, env *object.Environment) object.Obje
 	} else {
 		return NULL
 	}
-} 
+}
 
 // isTruthy uses the given object to determine the result of the condition contained
 // in the if-else-expression.

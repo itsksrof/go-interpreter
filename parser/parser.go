@@ -486,6 +486,11 @@ func (p *Parser) parseCallExpression(function ast.Expression) ast.Expression {
 	return exp
 }
 
+// parseIndexExpression constructs an *ast.IndexExpression node with the current token
+// it's sitting on. Then advances the current token and calls parseExpression with the prefix
+// precedence, parseExpression then checks the registered prefix parsing functions and finds
+// the appropiate parsing function and sets its result to exp.Index. Then it expects a
+// token.RBRACKET to be found. If it isn't returns nil, otherwise returns the expression.
 func (p *Parser) parseIndexExpression(left ast.Expression) ast.Expression {
 	exp := &ast.IndexExpression{Token: p.curToken, Left: left}
 
