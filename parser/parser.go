@@ -13,25 +13,27 @@ import (
 const (
 	_ int = iota
 	LOWEST
-	EQUALS		// ==
-	LESSGREATER	// > or <
-	SUM			// +
-	PRODUCT		// *
-	PREFIX		// -X or !X
-	CALL		// myFunction(x)
+	EQUALS      // ==
+	LESSGREATER // > or <
+	SUM         // +
+	PRODUCT     // *
+	PREFIX      // -X or !X
+	CALL        // myFunction(x)
+	INDEX       // array[index]
 )
 
 // precedences associates token types with their precedence.
 var precedences = map[token.TokenType]int{
-	token.EQ:		EQUALS,
-	token.NOT_EQ:	EQUALS,
-	token.LT:		LESSGREATER,
-	token.GT:		LESSGREATER,
-	token.PLUS:		SUM,
-	token.MINUS:	SUM,
-	token.SLASH:	PRODUCT,
+	token.EQ:       EQUALS,
+	token.NOT_EQ:   EQUALS,
+	token.LT:       LESSGREATER,
+	token.GT:       LESSGREATER,
+	token.PLUS:     SUM,
+	token.MINUS:    SUM,
+	token.SLASH:    PRODUCT,
 	token.ASTERISK: PRODUCT,
-	token.LPAREN:	CALL,
+	token.LPAREN:   CALL,
+	token.LBRACKET: INDEX,
 }
 
 // Both functions return an ast.Expression but only infixParseFn takes an argument,
@@ -53,21 +55,21 @@ type (
 // our lexer has: 'position' and 'readPosition'. But instead of pointing
 // to a character in the input, they point to the current and next token.
 type Parser struct {
-	l		*lexer.Lexer
-	errors	[]string
+	l      *lexer.Lexer
+	errors []string
 
-	curToken	token.Token	// current token under examination
-	peekToken	token.Token	// next token after the current token
+	curToken  token.Token // current token under examination
+	peekToken token.Token // next token after the current token
 
-	prefixParseFns	map[token.TokenType]prefixParseFn
-	infixParseFns	map[token.TokenType]infixParseFn
+	prefixParseFns map[token.TokenType]prefixParseFn
+	infixParseFns  map[token.TokenType]infixParseFn
 }
 
 // New initialize a *Parser with a given lexer instance, and
 // reads two tokens so curToken and peekToken are both set.
 func New(l *lexer.Lexer) *Parser {
 	p := &Parser{
-		l: l,
+		l:      l,
 		errors: []string{},
 	}
 
@@ -94,6 +96,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerInfix(token.SLASH, p.parseInfixExpression)
 	p.registerInfix(token.ASTERISK, p.parseInfixExpression)
 	p.registerInfix(token.LPAREN, p.parseCallExpression)
+	p.registerInfix(token.LBRACKET, p.parseIndexExpression)
 
 	// Read two tokens, so curToken and peekToken are both set
 	p.nextToken()
@@ -157,12 +160,12 @@ func (p *Parser) ParseProgram() *ast.Program {
 // token under examination does not match any of the possible cases nil is returned.
 func (p *Parser) parseStatement() ast.Statement {
 	switch p.curToken.Type {
-		case token.LET:
-			return p.parseLetStatement()
-		case token.RETURN:
-			return p.parseReturnStatement()
-		default:
-			return p.parseExpressionStatement()
+	case token.LET:
+		return p.parseLetStatement()
+	case token.RETURN:
+		return p.parseReturnStatement()
+	default:
+		return p.parseExpressionStatement()
 	}
 }
 
@@ -483,6 +486,19 @@ func (p *Parser) parseCallExpression(function ast.Expression) ast.Expression {
 	return exp
 }
 
+func (p *Parser) parseIndexExpression(left ast.Expression) ast.Expression {
+	exp := &ast.IndexExpression{Token: p.curToken, Left: left}
+
+	p.nextToken()
+	exp.Index = p.parseExpression(LOWEST)
+
+	if !p.expectPeek(token.RBRACKET) {
+		return nil
+	}
+
+	return exp
+}
+
 // parsePrefixExpression constructs an *ast.PrefixExpression node with the current token
 // it's sitting on. Then advances the current token and calls parseExpression with the prefix
 // precedence, parseExpression then checks the registered prefix parsing functions and finds
@@ -510,9 +526,9 @@ func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
 	//defer untrace(trace("parseInfixExpression"))
 
 	expression := &ast.InfixExpression{
-		Token: p.curToken,
+		Token:    p.curToken,
 		Operator: p.curToken.Literal,
-		Left: left,
+		Left:     left,
 	}
 
 	precedence := p.curPrecedence()
